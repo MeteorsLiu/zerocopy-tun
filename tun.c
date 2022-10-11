@@ -39,7 +39,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 	unsigned int blocksiz = 1 << 22, framesiz = 1 << 11;
 	unsigned int blocknum = 64;
 
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP));
 	if (fd < 0) {
 		perror("socket");
 		exit(1);
@@ -82,7 +82,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 
 	memset(&ll, 0, sizeof(ll));
 	ll.sll_family = PF_PACKET;
-	ll.sll_protocol = htons(ETH_P_ALL);
+	ll.sll_protocol = htons(ETH_P_IP);
 	ll.sll_ifindex = if_nametoindex(netdev);
 	ll.sll_hatype = 0;
 	ll.sll_pkttype = 0;
@@ -182,7 +182,7 @@ int tun_create(char if_name[IFNAMSIZ], const char *wanted_name)
         fprintf(stderr, "tun module not present. See https://sk.tl/2RdReigK\n");
         return -1;
     }
-    ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
     snprintf(ifr.ifr_name, IFNAMSIZ, "%s", wanted_name == NULL ? "" : wanted_name);
     if (ioctl(fd, TUNSETIFF, &ifr) != 0) {
         err = errno;
