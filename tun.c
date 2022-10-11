@@ -220,6 +220,7 @@ int main(int argc, char **argp)
 			}
             for (int n = 0; n < nfds; ++n) {
                 if (ctx.epoll.events[n].data.fd == ctx.ringfd) {
+					printf("in\n");
                     continue;
                 }
             }
