@@ -211,6 +211,7 @@ int main(int argc, char **argp)
         usage();
         exit(0);
     }
+	ctx.epoll.epollfd = epoll_create1(0);
     ctx.tunfd =  tun_create(if_name, argp[1]);
     printf("CreateTun: %s\n", if_name);
     memset(&ctx.ring, 0, sizeof(struct ring));
