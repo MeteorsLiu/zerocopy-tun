@@ -99,7 +99,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 	ll.sll_halen = 0;
 
 	err = bind(fd, (struct sockaddr *) &ll, sizeof(ll));
-	if (err < 0) {/
+	if (err < 0) {
 		perror("bind");
 		exit(1);
 	}
