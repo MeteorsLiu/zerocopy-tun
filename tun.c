@@ -101,11 +101,7 @@ static void display(struct tpacket3_hdr *ppd)
 	struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
 	struct iphdr *ip = (struct iphdr *) ((uint8_t *) eth + sizeof(struct ethhdr));
 
-	if (eth->h_proto == htons(ETH_P_IP)) {
-		printf("IP\n");
-	} else if (eth->h_proto == htons(ETH_P_ARP)) {
-		printf("ARP\n");
-	}
+	printf("%d\n", eth->h_proto);
 
 	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
 }
@@ -142,7 +138,7 @@ static void teardown_socket(struct Context *ctx)
 int event_add(struct Context *ctx) 
 {
     struct epoll_event ev;
-    ev.events = EPOLLIN | EPOLLET;
+    ev.events = EPOLLIN;
     ev.data.fd = ctx->ringfd;
     if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->ringfd, &ev) == -1) {
         perror("epoll_ctl: ring fd");
