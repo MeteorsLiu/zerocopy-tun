@@ -1,4 +1,6 @@
 #include "tun.h"
+#include "rand.h"
+#include <time.h>
 struct block_desc {
 	uint32_t version;
 	uint32_t offset_to_priv;
@@ -14,10 +16,18 @@ struct epoll_context {
     struct epoll_event events[2];
     int epollfd;
 };
+typedef struct __attribute__((aligned(16))) Buf_ {
+    unsigned char len[2];
+    unsigned char data[MAX_PACKET_LEN];
+    size_t        pos;
+} Buf;
+
+
 
 struct Context {
     struct epoll_context epoll;
     struct ring ring;
+	Buf buf;
     int tunfd;
     int ringfd;
 };
@@ -89,34 +99,42 @@ static int setup_socket(struct ring *ring, char *netdev)
 	ll.sll_halen = 0;
 
 	err = bind(fd, (struct sockaddr *) &ll, sizeof(ll));
-	if (err < 0) {
+	if (err < 0) {/
 		perror("bind");
 		exit(1);
 	}
 
 	return fd;
 }
-static void display(struct tpacket3_hdr *ppd)
+void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
-	//struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
-	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd + ppd->tp_mac);
+	memcpy(ctx->buf.data, (uint8_t *) ppd + ppd->tp_mac, (size_t) ppd->tp_len);
+	srand_sse((unsigned) time(NULL));
+	
+	unsigned int len;
+	unsigned int randint;
+	rand_sse(&len, 16);
+	len = MAX(MIN((unsigned)1500 - ppd->tp_len, len), (unsigned) 16);
+	for (int i=0, j=0; i < len; i += 16, j += 2) {
+		srand_sse((unsigned) time(NULL) + i);
+		rand_sse(&randint, 16);
+		memcpy(&ctx->buf.data[ ppd->tp_len + j ], endian_swap16((uint16_t) randint), 2);
+	}
+	uint16_t      binlen = endian_swap16((uint16_t) ppd->tp_len);
+	memcpy(ctx->buf.len, &binlen, 2);
+	printf("Rand Int With Buf Size: %d\n", ppd->tp_len + len);
 
-	printf("%d/t%d.%d.%d.%d\n", ppd->tp_mac, NIPQUAD(ip->saddr));
-
-
-	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
 }
-static void walk_block(struct block_desc *pbd, const int block_num)
+static void walk_block(struct Context *ctx, struct block_desc *pbd)
 {
 	int num_pkts = pbd->h1.num_pkts, i;
-	unsigned long bytes = 0;
 	struct tpacket3_hdr *ppd;
 
 	ppd = (struct tpacket3_hdr *) ((uint8_t *) pbd +
 				       pbd->h1.offset_to_first_pkt);
 	for (i = 0; i < num_pkts; ++i) {
 		
-		display(ppd);
+		copy_to_buf(ctx, ppd);
 
 		ppd = (struct tpacket3_hdr *) ((uint8_t *) ppd +
 					       ppd->tp_next_offset);

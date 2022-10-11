@@ -30,11 +30,23 @@
 # define unlikely(x)		__builtin_expect(!!(x), 0)
 #endif
 
-#define NIPQUAD(addr) \
-    ((unsigned char *)&addr)[0], \
-    ((unsigned char *)&addr)[1], \
-    ((unsigned char *)&addr)[2], \
-    ((unsigned char *)&addr)[3]
+#define MAX_PACKET_LEN 65536
+
+
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ && !defined(NATIVE_BIG_ENDIAN)
+#define NATIVE_BIG_ENDIAN
+#endif
+
+#ifdef NATIVE_BIG_ENDIAN
+#define endian_swap16(x) __builtin_bswap16(x)
+#define endian_swap32(x) __builtin_bswap32(x)
+#define endian_swap64(x) __builtin_bswap64(x)
+#else
+#define endian_swap16(x) (x)
+#define endian_swap32(x) (x)
+#define endian_swap64(x) (x)
+#endif
 
 
 #endif
