@@ -39,7 +39,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 	unsigned int blocksiz = 1 << 22, framesiz = 1 << 11;
 	unsigned int blocknum = 64;
 
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP));
 	if (fd < 0) {
 		perror("socket");
 		exit(1);
@@ -99,7 +99,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void display(struct tpacket3_hdr *ppd)
 {
 	struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
-	struct iphdr *ip = (struct iphdr *) ((uint8_t *) eth + ETH_HLEN);
+	struct iphdr *ip = (struct iphdr *) ((uint8_t *) eth + sizeof(struct ethhdr));
 
 	if (eth->h_proto == htons(ETH_P_IP)) {
 		struct sockaddr_in ss, sd;
