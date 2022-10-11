@@ -116,8 +116,8 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	unsigned int len;
 	unsigned int randint;
 	uint16_t      binlen;
-	rand_sse(&len, 16);
-	len = MAX(MIN((unsigned)(1400 - ppd->tp_len), len), (unsigned) 16);
+	rand_sse(&randint, 16);
+	len = MAX(MIN((unsigned)(1400 - ppd->tp_len), randint), (unsigned) 16);
 
 	for (unsigned int i=0; i < len; i += 2) {
 		srand_sse((unsigned) time(NULL) + i);
