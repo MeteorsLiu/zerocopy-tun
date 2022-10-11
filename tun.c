@@ -155,7 +155,7 @@ static void teardown_socket(struct Context *ctx)
 int event_add(struct Context *ctx) 
 {
     struct epoll_event ev;
-    ev.events = EPOLLIN;
+    ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = ctx->ringfd;
     if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->ringfd, &ev) == -1) {
         perror("epoll_ctl: ring fd");
@@ -209,7 +209,7 @@ int main(int argc, char **argp)
     char if_name[IFNAMSIZ];
     if (argc < 1) {
         usage();
-        exit(0);
+        goto exit;
     }
 	ctx.epoll.epollfd = epoll_create1(0);
     ctx.tunfd =  tun_create(if_name, argp[1]);
@@ -217,7 +217,7 @@ int main(int argc, char **argp)
     memset(&ctx.ring, 0, sizeof(struct ring));
 	ctx.ringfd = setup_socket(&ctx.ring, if_name);
 
-	if (ctx.tunfd == -1 || ctx.ringfd == -1) {
+	if (ctx.tunfd == -1 || ctx.ringfd == -1 || ctx.epoll.epollfd == -1) {
 		printf("fd error");
 		goto exit;
 	}
@@ -247,6 +247,7 @@ int main(int argc, char **argp)
     }
     teardown_socket(&ctx);
     close(ctx.tunfd);
+	close(ctx.epoll.epollfd);
 exit:
     return 0;
 }
