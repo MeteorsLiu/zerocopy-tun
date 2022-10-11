@@ -155,17 +155,17 @@ static void teardown_socket(struct Context *ctx)
 int event_add(struct Context *ctx) 
 {
     struct epoll_event ev;
-    ev.events = EPOLLIN | EPOLLERR;
+    ev.events = EPOLLIN;
     ev.data.fd = ctx->ringfd;
     if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->ringfd, &ev) == -1) {
-        perror("epoll_ctl: listen_sock");
+        perror("epoll_ctl: ring fd");
         return -1;
     }
     memset(&ev, 0, sizeof(struct epoll_event));
-    ev.events = EPOLLOUT | EPOLLERR;
+    ev.events = EPOLLOUT;
     ev.data.fd = ctx->tunfd;
     if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->tunfd, &ev) == -1) {
-        perror("epoll_ctl: listen_sock");
+        perror("epoll_ctl: tun fd");
         return -1;
     }
 }
@@ -215,6 +215,11 @@ int main(int argc, char **argp)
     printf("CreateTun: %s\n", if_name);
     memset(&ctx.ring, 0, sizeof(struct ring));
 	ctx.ringfd = setup_socket(&ctx.ring, if_name);
+
+	if (ctx.tunfd == -1 || ctx.ringfd == -1) {
+		printf("fd error");
+		goto exit;
+	}
     event_add(&ctx);
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
@@ -238,5 +243,6 @@ int main(int argc, char **argp)
     }
     teardown_socket(&ctx);
     close(ctx.tunfd);
+exit:
     return 0;
 }
