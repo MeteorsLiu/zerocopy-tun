@@ -99,7 +99,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void display(struct tpacket3_hdr *ppd)
 {
 	//struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
-	struct iphdr *ip = (struct iphdr *) (ppd + 8);
+	struct iphdr *ip = (struct iphdr *) (ppd + 64);
 
 	printf("%d.%d.%d.%d\n", NIPQUAD(ip->saddr));
 
