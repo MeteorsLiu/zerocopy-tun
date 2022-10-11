@@ -102,22 +102,9 @@ static void display(struct tpacket3_hdr *ppd)
 	struct iphdr *ip = (struct iphdr *) ((uint8_t *) eth + sizeof(struct ethhdr));
 
 	if (eth->h_proto == htons(ETH_P_IP)) {
-		struct sockaddr_in ss, sd;
-		char sbuff[NI_MAXHOST], dbuff[NI_MAXHOST];
-
-		memset(&ss, 0, sizeof(ss));
-		ss.sin_family = PF_INET;
-		ss.sin_addr.s_addr = ip->saddr;
-		getnameinfo((struct sockaddr *) &ss, sizeof(ss),
-			    sbuff, sizeof(sbuff), NULL, 0, NI_NUMERICHOST);
-
-		memset(&sd, 0, sizeof(sd));
-		sd.sin_family = PF_INET;
-		sd.sin_addr.s_addr = ip->daddr;
-		getnameinfo((struct sockaddr *) &sd, sizeof(sd),
-			    dbuff, sizeof(dbuff), NULL, 0, NI_NUMERICHOST);
-
-		printf("%s -> %s, ", sbuff, dbuff);
+		printf("IP\n");
+	} else if (eth->h_proto == htons(ETH_P_ARP)) {
+		printf("ARP\n");
 	}
 
 	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
