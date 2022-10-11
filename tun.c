@@ -161,7 +161,7 @@ int event_add(struct Context *ctx)
         perror("epoll_ctl: listen_sock");
         return -1;
     }
-    memset(ev, 0, sizeof(struct epoll_event));
+    memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLOUT | EPOLLERR;
     ev.data.fd = ctx->tunfd;
     if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->tunfd, &ev) == -1) {
@@ -195,9 +195,9 @@ int tun_create(char if_name[IFNAMSIZ], const char *wanted_name)
 
 void usage()
 {
-    printf("usage:\n
-        ./tun TUN-NAME\n
-    ");
+    puts("usage:\n"
+        "./tun TUN-NAME\n"
+    );
 }
 int main(int argc, char **argp)
 {
@@ -232,7 +232,7 @@ int main(int argc, char **argp)
             }
 			
 		}
-        walk_block(pbd);
+        walk_block(pbd, block_num);
 		flush_block(pbd);
 		block_num = (block_num + 1) % blocks;
     }

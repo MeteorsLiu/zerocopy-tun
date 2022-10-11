@@ -17,6 +17,8 @@
 #include <linux/ip.h>
 #include <linux/if_tun.h>
 #include <sys/epoll.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 
 #define _GNU_SOURCE 
 #include <fcntl.h>
