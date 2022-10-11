@@ -101,7 +101,7 @@ static void display(struct tpacket3_hdr *ppd)
 	//struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
 	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd + 16);
 
-	printf("%d\n", ip->tot_len);
+	printf("%d\n", ip->saddr);
 
 
 	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
