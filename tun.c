@@ -106,10 +106,10 @@ static int setup_socket(struct ring *ring, char *netdev)
 
 	return fd;
 }
-void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
+static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
 	memset(ctx->buf.data, 0, sizeof(ctx->buf.data));
-	memcpy(ctx->buf.data, (uint8_t *) ppd + ppd->tp_mac, (size_t) ppd->tp_len);
+	/*memcpy(ctx->buf.data, (uint8_t *) ppd + ppd->tp_mac, (size_t) ppd->tp_len);
 
 	srand_sse((unsigned) time(NULL));
 	
@@ -123,7 +123,7 @@ void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 		memcpy(&ctx->buf.data[ ppd->tp_len + j ], endian_swap16((uint16_t) randint), 2);
 	}
 	uint16_t      binlen = endian_swap16((uint16_t) ppd->tp_len);
-	memcpy(ctx->buf.len, &binlen, 2);
+	memcpy(ctx->buf.len, &binlen, 2);*/
 	printf("Rand Int With Buf Size: %d\n", ppd->tp_len);
 
 }
