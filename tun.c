@@ -120,7 +120,7 @@ static void display(struct tpacket3_hdr *ppd)
 		printf("%s -> %s, ", sbuff, dbuff);
 	}
 
-	printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
+	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
 }
 static void walk_block(struct block_desc *pbd, const int block_num)
 {
