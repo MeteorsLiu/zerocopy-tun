@@ -224,7 +224,7 @@ int main(int argc, char **argp)
     event_add(&ctx);
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-    while (unlikely(exit_signal_received == 1)) {
+    while (exit_signal_received != 1) {
 
         pbd = (struct block_desc *) ctx.ring.rd[block_num].iov_base;
 
