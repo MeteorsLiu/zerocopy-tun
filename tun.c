@@ -39,7 +39,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 	unsigned int blocksiz = 1 << 22, framesiz = 1 << 11;
 	unsigned int blocknum = 64;
 
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (fd < 0) {
 		perror("socket");
 		exit(1);
