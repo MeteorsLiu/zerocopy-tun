@@ -39,7 +39,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 	unsigned int blocksiz = 1 << 22, framesiz = 1 << 11;
 	unsigned int blocknum = 64;
 
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (fd < 0) {
 		perror("socket");
 		exit(1);
@@ -82,7 +82,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 
 	memset(&ll, 0, sizeof(ll));
 	ll.sll_family = PF_PACKET;
-	ll.sll_protocol = htons(ETH_P_IP);
+	ll.sll_protocol = htons(ETH_P_ALL);
 	ll.sll_ifindex = if_nametoindex(netdev);
 	ll.sll_hatype = 0;
 	ll.sll_pkttype = 0;
@@ -98,10 +98,10 @@ static int setup_socket(struct ring *ring, char *netdev)
 }
 static void display(struct tpacket3_hdr *ppd)
 {
-	struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
-	struct iphdr *ip = (struct iphdr *) ((uint8_t *) eth + sizeof(struct ethhdr));
+	//struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
+	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd);
 
-	printf("%d\n", eth->h_proto);
+	printf("%d\n", ip->saddr);
 
 
 	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
