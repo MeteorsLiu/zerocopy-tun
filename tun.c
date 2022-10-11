@@ -209,10 +209,6 @@ int main(int argc, char **argp)
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     while (exit_signal_received != 1) {
-
-        pbd = (struct block_desc *) ctx.ring.rd[block_num].iov_base;
-
-		if ((pbd->h1.block_status & TP_STATUS_USER) == 0) {
 			nfds = epoll_wait(ctx.epoll.epollfd, ctx.epoll.events, 2, -1);
             if (nfds == -1) {
 				printf("no waiter");
@@ -220,15 +216,18 @@ int main(int argc, char **argp)
 			}
             for (int n = 0; n < nfds; ++n) {
                 if (ctx.epoll.events[n].data.fd == ctx.ringfd) {
-					printf("in\n");
-                    continue;
-                }
+					pbd = (struct block_desc *) ctx.ring.rd[block_num].iov_base;
+
+					if ((pbd->h1.block_status & TP_STATUS_USER) == 0) 
+					{
+						continue;
+					}
+					walk_block(pbd, block_num);
+					flush_block(pbd);
+					block_num = (block_num + 1) % blocks;
+				}
             }
 			
-		}
-        walk_block(pbd, block_num);
-		flush_block(pbd);
-		block_num = (block_num + 1) % blocks;
     }
     teardown_socket(&ctx);
     close(ctx.tunfd);
