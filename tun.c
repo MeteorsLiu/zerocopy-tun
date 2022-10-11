@@ -99,7 +99,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void display(struct tpacket3_hdr *ppd)
 {
 	//struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
-	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd + ppd->tp_mac);
+	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd + 16);
 
 	printf("%d\n", ip->tot_len);
 
