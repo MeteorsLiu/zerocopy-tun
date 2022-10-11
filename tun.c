@@ -164,7 +164,7 @@ int tun_create(char if_name[IFNAMSIZ], const char *wanted_name)
         fprintf(stderr, "tun module not present. See https://sk.tl/2RdReigK\n");
         return -1;
     }
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
     snprintf(ifr.ifr_name, IFNAMSIZ, "%s", wanted_name == NULL ? "" : wanted_name);
     if (ioctl(fd, TUNSETIFF, &ifr) != 0) {
         err = errno;
