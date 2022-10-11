@@ -99,9 +99,9 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void display(struct tpacket3_hdr *ppd)
 {
 	//struct ethhdr *eth = (struct ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
-	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd + 8);
+	struct iphdr *ip = (struct iphdr *) ((uint8_t *) ppd + 9);
 
-	printf("%pl6\n", ip->saddr);
+	printf("%pI4\n", &ip->saddr);
 
 
 	//printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
