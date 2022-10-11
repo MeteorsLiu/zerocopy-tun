@@ -230,7 +230,10 @@ int main(int argc, char **argp)
 
 		if ((pbd->h1.block_status & TP_STATUS_USER) == 0) {
 			nfds = epoll_wait(ctx.epoll.epollfd, ctx.epoll.events, 2, -1);
-            if (nfds == -1) break;
+            if (nfds == -1) {
+				printf("no waiter");
+				continue;	
+			}
             for (int n = 0; n < nfds; ++n) {
                 if (ctx.epoll.events[n].data.fd == ctx.ringfd) {
                     continue;
