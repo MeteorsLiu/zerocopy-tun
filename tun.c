@@ -117,18 +117,18 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	unsigned int randint;
 	uint16_t      binlen;
 	rand_sse(&randint, 16);
-	len = MAX(MIN((unsigned)(1400 - ppd->tp_len), randint), (unsigned) 16);
+	len = MAX(MIN((unsigned)(1300 - ppd->tp_len), randint), (unsigned) 16);
 
 	for (unsigned int i=0; i < len; i += 2) {
 		srand_sse((unsigned) time(NULL) + i);
 		rand_sse(&randint, 16);
 		binlen = endian_swap16((uint16_t) randint);
 		printf("Rand: %d\n", binlen);
-		//memcpy(&ctx->buf.data[ ppd->tp_len + i ], binlen, 2);
+		memcpy(&ctx->buf.data[ ppd->tp_len + i ], binlen, 2);
 	}
 	binlen = endian_swap16((uint16_t) ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
-	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len, len);
+	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len + len, len);
 
 }
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
