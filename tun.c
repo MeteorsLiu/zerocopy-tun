@@ -130,7 +130,7 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	unsigned int randint;
 	uint16_t binlen;
 
-	len = rand_range(16, ppd->tp_len);
+	len = rand_range(16, ppd->tp_len / 2);
 	if (1500 - ppd->tp_len - len < 0) {
 		len = rand_range(16, 1500 - ppd->tp_len);
 	}
