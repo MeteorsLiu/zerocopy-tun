@@ -125,7 +125,7 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	memset(ctx->buf.data, 0, sizeof(ctx->buf.data));
 
 	memcpy(ctx->buf.data, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
-	/*
+	
 	int len, padding_len;
 	unsigned int randint;
 	uint16_t binlen;
@@ -143,7 +143,7 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	}
 	binlen = endian_swap16((uint16_t)ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
-	*/
+	
 	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len);
 }
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
@@ -156,7 +156,7 @@ static void walk_block(struct Context *ctx, struct block_desc *pbd)
 	for (i = 0; i < num_pkts; ++i)
 	{
 
-		// copy_to_buf(ctx, ppd);
+		copy_to_buf(ctx, ppd);
 		ppd = (struct tpacket3_hdr *)((uint8_t *)ppd +
 									  ppd->tp_next_offset);
 	}
