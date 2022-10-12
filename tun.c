@@ -231,7 +231,7 @@ static void walk_block(struct Context *ctx, struct block_desc *pbd)
 	for (i = 0; i < num_pkts; ++i)
 	{
 
-		echo(ctx, ppd);
+		echo_zerocopy(ctx, ppd);
 		ppd = (struct tpacket3_hdr *)((uint8_t *)ppd +
 									  ppd->tp_next_offset);
 	}
