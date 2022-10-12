@@ -16,7 +16,7 @@ struct ring
 };
 struct epoll_context
 {
-	struct epoll_event events[2];
+	struct epoll_event events[1];
 	int epollfd;
 };
 typedef struct __attribute__((aligned(16))) Buf_
@@ -45,7 +45,7 @@ static void signal_handler(int sig)
 int rand_range(int from, int to)
 {
 	unsigned int randint;
-	srand_sse((unsigned)time(NULL)+from+to);
+	srand_sse((unsigned)time(NULL) + from + to);
 	rand_sse(&randint, 16);
 	return from + ((int)randint % (to - from + 1));
 }
@@ -123,7 +123,7 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
 	memset(ctx->buf.data, 0, sizeof(ctx->buf.data));
-	
+
 	memcpy(ctx->buf.data, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
 	/*
 	int len, padding_len;
@@ -156,7 +156,7 @@ static void walk_block(struct Context *ctx, struct block_desc *pbd)
 	for (i = 0; i < num_pkts; ++i)
 	{
 
-		//copy_to_buf(ctx, ppd);
+		// copy_to_buf(ctx, ppd);
 		ppd = (struct tpacket3_hdr *)((uint8_t *)ppd +
 									  ppd->tp_next_offset);
 	}
@@ -176,19 +176,11 @@ static void teardown_socket(struct Context *ctx)
 int event_add(struct Context *ctx)
 {
 	struct epoll_event ev;
-	ev.events = EPOLLIN;
+	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = ctx->ringfd;
 	if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->ringfd, &ev) == -1)
 	{
 		perror("epoll_ctl: ring fd");
-		return -1;
-	}
-	memset(&ev, 0, sizeof(struct epoll_event));
-	ev.events = EPOLLOUT;
-	ev.data.fd = ctx->tunfd;
-	if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->tunfd, &ev) == -1)
-	{
-		perror("epoll_ctl: tun fd");
 		return -1;
 	}
 }
@@ -252,26 +244,24 @@ int main(int argc, char **argp)
 	signal(SIGTERM, signal_handler);
 	while (exit_signal_received != 1)
 	{
-		nfds = epoll_wait(ctx.epoll.epollfd, ctx.epoll.events, 2, -1);
+		nfds = epoll_wait(ctx.epoll.epollfd, ctx.epoll.events, 1, -1);
 		if (nfds == -1)
 		{
 			printf("no waiter");
 			continue;
 		}
-		for (int n = 0; n < nfds; ++n)
-		{
-			if (ctx.epoll.events[n].data.fd == ctx.ringfd)
-			{
-				pbd = (struct block_desc *)ctx.ring.rd[block_num].iov_base;
 
-				if ((pbd->h1.block_status & TP_STATUS_USER) == 0)
-				{
-					continue;
-				}
-				walk_block(&ctx, pbd);
-				flush_block(pbd);
-				block_num = (block_num + 1) % blocks;
+		if (ctx.epoll.events[0].data.fd == ctx.ringfd)
+		{
+			pbd = (struct block_desc *)ctx.ring.rd[block_num].iov_base;
+
+			if ((pbd->h1.block_status & TP_STATUS_USER) == 0)
+			{
+				continue;
 			}
+			walk_block(&ctx, pbd);
+			flush_block(pbd);
+			block_num = (block_num + 1) % blocks;
 		}
 	}
 	teardown_socket(&ctx);
