@@ -1,54 +1,54 @@
 #include "tun.h"
 #include "rand.h"
 #include <time.h>
-struct block_desc {
+struct block_desc
+{
 	uint32_t version;
 	uint32_t offset_to_priv;
 	struct tpacket_hdr_v1 h1;
 };
 
-struct ring {
+struct ring
+{
 	struct iovec *rd;
 	uint8_t *map;
 	struct tpacket_req3 req;
 };
-struct epoll_context {
-    struct epoll_event events[2];
-    int epollfd;
+struct epoll_context
+{
+	struct epoll_event events[2];
+	int epollfd;
 };
-typedef struct __attribute__((aligned(16))) Buf_ {
-    unsigned char len[2];
-    unsigned char data[MAX_PACKET_LEN];
-    size_t        pos;
+typedef struct __attribute__((aligned(16))) Buf_
+{
+	unsigned char len[2];
+	unsigned char data[MAX_PACKET_LEN];
+	size_t pos;
 } Buf;
 
-
-
-struct Context {
-    struct epoll_context epoll;
-    struct ring ring;
+struct Context
+{
+	struct epoll_context epoll;
+	struct ring ring;
 	Buf buf;
-    int tunfd;
-    int ringfd;
+	int tunfd;
+	int ringfd;
 };
-
 
 volatile sig_atomic_t exit_signal_received;
 static void signal_handler(int sig)
 {
-    signal(sig, SIG_DFL);
-    exit_signal_received = 1;
+	signal(sig, SIG_DFL);
+	exit_signal_received = 1;
 }
 
 int rand_range(int from, int to)
 {
-    unsigned int randint;
-	srand_sse((unsigned) time(NULL));
+	unsigned int randint;
+	srand_sse((unsigned)time(NULL));
 	rand_sse(&randint, 16);
-	return from + ( (int) randint % ( to - from + 1 ) );
+	return from + ((int)randint % (to - from + 1));
 }
-
-
 
 static int setup_socket(struct ring *ring, char *netdev)
 {
@@ -58,13 +58,15 @@ static int setup_socket(struct ring *ring, char *netdev)
 	unsigned int blocknum = 64;
 
 	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (fd < 0) {
+	if (fd < 0)
+	{
 		perror("socket");
 		exit(1);
 	}
 
 	err = setsockopt(fd, SOL_PACKET, PACKET_VERSION, &v, sizeof(v));
-	if (err < 0) {
+	if (err < 0)
+	{
 		perror("setsockopt");
 		exit(1);
 	}
@@ -78,22 +80,25 @@ static int setup_socket(struct ring *ring, char *netdev)
 	ring->req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
 
 	err = setsockopt(fd, SOL_PACKET, PACKET_RX_RING, &ring->req,
-			 sizeof(ring->req));
-	if (err < 0) {
+					 sizeof(ring->req));
+	if (err < 0)
+	{
 		perror("setsockopt");
 		exit(1);
 	}
 
 	ring->map = mmap(NULL, ring->req.tp_block_size * ring->req.tp_block_nr,
-			 PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, fd, 0);
-	if (ring->map == MAP_FAILED) {
+					 PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, fd, 0);
+	if (ring->map == MAP_FAILED)
+	{
 		perror("mmap");
 		exit(1);
 	}
 
 	ring->rd = malloc(ring->req.tp_block_nr * sizeof(*ring->rd));
 	assert(ring->rd);
-	for (i = 0; i < ring->req.tp_block_nr; ++i) {
+	for (i = 0; i < ring->req.tp_block_nr; ++i)
+	{
 		ring->rd[i].iov_base = ring->map + (i * ring->req.tp_block_size);
 		ring->rd[i].iov_len = ring->req.tp_block_size;
 	}
@@ -106,8 +111,9 @@ static int setup_socket(struct ring *ring, char *netdev)
 	ll.sll_pkttype = 0;
 	ll.sll_halen = 0;
 
-	err = bind(fd, (struct sockaddr *) &ll, sizeof(ll));
-	if (err < 0) {
+	err = bind(fd, (struct sockaddr *)&ll, sizeof(ll));
+	if (err < 0)
+	{
 		perror("bind");
 		exit(1);
 	}
@@ -117,43 +123,45 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
 	memset(ctx->buf.data, 0, sizeof(ctx->buf.data));
-	memcpy(ctx->buf.data, (uint8_t *) ppd + ppd->tp_mac, (size_t) ppd->tp_len);
+	memcpy(ctx->buf.data, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
 
-	srand_sse((unsigned) time(NULL));
-	
+	srand_sse((unsigned)time(NULL));
+
 	int len;
 	unsigned int randint;
-	uint16_t      binlen;
+	uint16_t binlen;
 	int padding_len = ppd->tp_len < 500 ? 500 - ppd->tp_len : 1500 - ppd->tp_len;
 	len = rand_range(16, padding_len);
-
-	for (int i=0; i < len; i += 2) {
-		srand_sse((unsigned) time(NULL) + i);
+	// offset
+	ctx->buf.data += (ppd->tp_len + 1);
+	for (int i = 0; i < len; i += 2)
+	{
+		srand_sse((unsigned)time(NULL) + i);
 		rand_sse(&randint, 16);
-		binlen = endian_swap16((uint16_t) randint);
+		binlen = endian_swap16((uint16_t)randint);
 		printf("Rand: %d\n", binlen);
-		memcpy(ctx->buf.data + ppd->tp_len + i, binlen, 2);
+		ctx->buf.data += i;
+		memcpy(ctx->buf.data, binlen, 2);
 	}
-	binlen = endian_swap16((uint16_t) ppd->tp_len);
+	binlen = endian_swap16((uint16_t)ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
 	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len + len, len);
-
 }
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
 {
 	int num_pkts = pbd->h1.num_pkts, i;
 	struct tpacket3_hdr *ppd;
 
-	ppd = (struct tpacket3_hdr *) ((uint8_t *) pbd +
-				       pbd->h1.offset_to_first_pkt);
-	for (i = 0; i < num_pkts; ++i) {
-		
+	ppd = (struct tpacket3_hdr *)((uint8_t *)pbd +
+								  pbd->h1.offset_to_first_pkt);
+	for (i = 0; i < num_pkts; ++i)
+	{
+
 		copy_to_buf(ctx, ppd);
 
-		ppd = (struct tpacket3_hdr *) ((uint8_t *) ppd +
-					       ppd->tp_next_offset);
+		ppd = (struct tpacket3_hdr *)((uint8_t *)ppd +
+									  ppd->tp_next_offset);
 	}
-
 }
 
 static void flush_block(struct block_desc *pbd)
@@ -166,104 +174,111 @@ static void teardown_socket(struct Context *ctx)
 	munmap(ctx->ring.map, ctx->ring.req.tp_block_size * ctx->ring.req.tp_block_nr);
 	free(ctx->ring.rd);
 	close(ctx->ringfd);
-
 }
-int event_add(struct Context *ctx) 
+int event_add(struct Context *ctx)
 {
-    struct epoll_event ev;
-    ev.events = EPOLLIN;
-    ev.data.fd = ctx->ringfd;
-    if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->ringfd, &ev) == -1) {
-        perror("epoll_ctl: ring fd");
-        return -1;
-    }
-    memset(&ev, 0, sizeof(struct epoll_event));
-    ev.events = EPOLLOUT;
-    ev.data.fd = ctx->tunfd;
-    if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->tunfd, &ev) == -1) {
-        perror("epoll_ctl: tun fd");
-        return -1;
-    }
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+	ev.data.fd = ctx->ringfd;
+	if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->ringfd, &ev) == -1)
+	{
+		perror("epoll_ctl: ring fd");
+		return -1;
+	}
+	memset(&ev, 0, sizeof(struct epoll_event));
+	ev.events = EPOLLOUT;
+	ev.data.fd = ctx->tunfd;
+	if (epoll_ctl(ctx->epoll.epollfd, EPOLL_CTL_ADD, ctx->tunfd, &ev) == -1)
+	{
+		perror("epoll_ctl: tun fd");
+		return -1;
+	}
 }
 
 int tun_create(char if_name[IFNAMSIZ], const char *wanted_name)
 {
-    struct ifreq ifr;
-    int          fd;
-    int          err;
+	struct ifreq ifr;
+	int fd;
+	int err;
 
-    fd = open("/dev/net/tun", O_RDWR);
-    if (fd == -1) {
-        fprintf(stderr, "tun module not present. See https://sk.tl/2RdReigK\n");
-        return -1;
-    }
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-    snprintf(ifr.ifr_name, IFNAMSIZ, "%s", wanted_name == NULL ? "" : wanted_name);
-    if (ioctl(fd, TUNSETIFF, &ifr) != 0) {
-        err = errno;
-        (void) close(fd);
-        errno = err;
-        return -1;
-    }
-    snprintf(if_name, IFNAMSIZ, "%s", ifr.ifr_name);
-    return fd;
+	fd = open("/dev/net/tun", O_RDWR);
+	if (fd == -1)
+	{
+		fprintf(stderr, "tun module not present. See https://sk.tl/2RdReigK\n");
+		return -1;
+	}
+	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+	snprintf(ifr.ifr_name, IFNAMSIZ, "%s", wanted_name == NULL ? "" : wanted_name);
+	if (ioctl(fd, TUNSETIFF, &ifr) != 0)
+	{
+		err = errno;
+		(void)close(fd);
+		errno = err;
+		return -1;
+	}
+	snprintf(if_name, IFNAMSIZ, "%s", ifr.ifr_name);
+	return fd;
 }
 
 void usage()
 {
-    puts("usage:\n"
-        "./tun TUN-NAME\n"
-    );
+	puts("usage:\n"
+		 "./tun TUN-NAME\n");
 }
 int main(int argc, char **argp)
 {
-    unsigned int block_num = 0, blocks = 64;
-    int nfds;
+	unsigned int block_num = 0, blocks = 64;
+	int nfds;
 	struct block_desc *pbd;
 	struct tpacket_stats_v3 stats;
-    struct Context ctx;
-    char if_name[IFNAMSIZ];
-    if (argc < 1) {
-        usage();
-        goto exit;
-    }
+	struct Context ctx;
+	char if_name[IFNAMSIZ];
+	if (argc < 1)
+	{
+		usage();
+		goto exit;
+	}
 	ctx.epoll.epollfd = epoll_create1(0);
-    ctx.tunfd =  tun_create(if_name, argp[1]);
-    printf("CreateTun: %s\n", if_name);
-    memset(&ctx.ring, 0, sizeof(struct ring));
+	ctx.tunfd = tun_create(if_name, argp[1]);
+	printf("CreateTun: %s\n", if_name);
+	memset(&ctx.ring, 0, sizeof(struct ring));
 	ctx.ringfd = setup_socket(&ctx.ring, if_name);
 
-	if (ctx.tunfd == -1 || ctx.ringfd == -1 || ctx.epoll.epollfd == -1) {
+	if (ctx.tunfd == -1 || ctx.ringfd == -1 || ctx.epoll.epollfd == -1)
+	{
 		printf("fd error");
 		goto exit;
 	}
-    event_add(&ctx);
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
-    while (exit_signal_received != 1) {
-			nfds = epoll_wait(ctx.epoll.epollfd, ctx.epoll.events, 2, -1);
-            if (nfds == -1) {
-				printf("no waiter");
-				continue;	
-			}
-            for (int n = 0; n < nfds; ++n) {
-                if (ctx.epoll.events[n].data.fd == ctx.ringfd) {
-					pbd = (struct block_desc *) ctx.ring.rd[block_num].iov_base;
+	event_add(&ctx);
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
+	while (exit_signal_received != 1)
+	{
+		nfds = epoll_wait(ctx.epoll.epollfd, ctx.epoll.events, 2, -1);
+		if (nfds == -1)
+		{
+			printf("no waiter");
+			continue;
+		}
+		for (int n = 0; n < nfds; ++n)
+		{
+			if (ctx.epoll.events[n].data.fd == ctx.ringfd)
+			{
+				pbd = (struct block_desc *)ctx.ring.rd[block_num].iov_base;
 
-					if ((pbd->h1.block_status & TP_STATUS_USER) == 0) 
-					{
-						continue;
-					}
-					walk_block(&ctx, pbd);
-					flush_block(pbd);
-					block_num = (block_num + 1) % blocks;
+				if ((pbd->h1.block_status & TP_STATUS_USER) == 0)
+				{
+					continue;
 				}
-            }
-			
-    }
-    teardown_socket(&ctx);
-    close(ctx.tunfd);
+				walk_block(&ctx, pbd);
+				flush_block(pbd);
+				block_num = (block_num + 1) % blocks;
+			}
+		}
+	}
+	teardown_socket(&ctx);
+	close(ctx.tunfd);
 	close(ctx.epoll.epollfd);
 exit:
-    return 0;
+	return 0;
 }
