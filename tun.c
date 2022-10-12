@@ -33,6 +33,7 @@ struct Context
 	Buf buf;
 	int tunfd;
 	int ringfd;
+	int pipefd[2];
 };
 
 volatile sig_atomic_t exit_signal_received;
@@ -175,7 +176,7 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len + len, len);
 }
 
-static void echo(struct Context *ctx, struct tpacket3_hdr *ppd)
+static void echo_naive(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
 	unsigned char ip[4];
 	unsigned char buffer[1500];
@@ -187,10 +188,39 @@ static void echo(struct Context *ctx, struct tpacket3_hdr *ppd)
 
     buffer[20] = 0;
     *((unsigned short *)&buffer[22]) += 8;
-	while (write(ctx->tunfd, buffer, (size_t)ppd->tp_len) < (ssize_t) 0)
+	while (write(ctx->tunfd, buffer, (size_t)ppd->tp_len) < 0)
 		;
 
 }
+
+static void echo_zerocopy(struct Context *ctx, struct tpacket3_hdr *ppd)
+{
+	unsigned char ip[4];
+	unsigned char buffer[1500];
+	memset(buffer, 0, sizeof(buffer));
+	memcpy(buffer, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
+	memcpy(ip, &buffer[12], 4);
+    memcpy(&buffer[12], &buffer[16], 4);
+    memcpy(&buffer[16], ip, 4);
+
+    buffer[20] = 0;
+    *((unsigned short *)&buffer[22]) += 8;
+	struct iovec vec = { .iov_base = buffer, .iov_len = (size_t)ppd->tp_len };
+	if ((ssize_t len = vmsplice (ctx->pipefd[1], vec, (size_t)ppd->tp_len, SPLICE_F_MOVE | SPLICE_F_GIFT)) < 0) {
+		perror("vmsplice error");
+		return;
+	}
+	loff_t out_off = 0;
+
+	while (len > 0) {
+		err = splice (ctx->pipefd[0], NULL, ctx->tunfd, &out_off, (size_t)ppd->tp_len,
+		SPLICE_F_MOVE | SPLICE_F_MORE);
+		len -= out_off;
+	}
+
+}
+
+
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
 {
 	int num_pkts = pbd->h1.num_pkts, i;
@@ -260,6 +290,14 @@ void usage()
 	puts("usage:\n"
 		 "./tun TUN-NAME\n");
 }
+
+void close_all(struct Context *ctx) {
+	teardown_socket(ctx);
+	close(ctx->tunfd);
+	close(ctx->epoll.epollfd);
+	close(ctx->pipefd[0]);
+	close(ctx->pipefd[1]);
+}
 int main(int argc, char **argp)
 {
 	unsigned int block_num = 0, blocks = 64;
@@ -271,6 +309,10 @@ int main(int argc, char **argp)
 	if (argc < 1)
 	{
 		usage();
+		goto exit;
+	}
+	if (pipe(ctx.pipefd) < 0) {
+		perror("pipe error");
 		goto exit;
 	}
 	ctx.epoll.epollfd = epoll_create1(0);
@@ -309,9 +351,7 @@ int main(int argc, char **argp)
 			block_num = (block_num + 1) % blocks;
 		}
 	}
-	teardown_socket(&ctx);
-	close(ctx.tunfd);
-	close(ctx.epoll.epollfd);
+	close_all(&ctx);
 exit:
 	return 0;
 }
