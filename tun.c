@@ -181,7 +181,7 @@ static void echo(struct Context *ctx, struct tpacket3_hdr *ppd)
 	__be32 tmp = ip->daddr;
 	ip->daddr = ip->saddr;
 	ip->saddr = tmp;
-	while (write(ctx->tunfd, (uint8_t *)ppd + ppd->tp_mac, ppd->tp_len) < (ssize_t) 0 && errno == EINTR &&
+	while (write(ctx->tunfd, ip, ppd->tp_len) < (ssize_t) 0 && errno == EINTR &&
            !exit_signal_received)
 		;
 
