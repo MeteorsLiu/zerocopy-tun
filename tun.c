@@ -214,7 +214,10 @@ static void echo_zerocopy(struct Context *ctx, struct tpacket3_hdr *ppd)
 	loff_t out_off = 0;
 
 	while (len > 0) {
-		splice (ctx->pipefd[0], NULL, ctx->tunfd, &out_off, (size_t)ppd->tp_len, SPLICE_F_MOVE | SPLICE_F_MORE);
+		if (splice (ctx->pipefd[0], NULL, ctx->tunfd, &out_off, (size_t)ppd->tp_len, SPLICE_F_MOVE | SPLICE_F_MORE) < 0){
+			perror("splice error");
+			return;
+		}
 		len -= out_off;
 	}
 
