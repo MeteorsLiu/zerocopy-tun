@@ -1,4 +1,5 @@
 #ifndef tun_H
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -8,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <sys/uio.h>
 #include <signal.h>
 #include <inttypes.h>
 #include <sys/socket.h>
@@ -20,7 +22,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#define _GNU_SOURCE 
+
 #include <fcntl.h>
 
 #ifndef likely
