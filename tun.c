@@ -40,6 +40,14 @@ static void signal_handler(int sig)
     exit_signal_received = 1;
 }
 
+int rand_range(int from, int to)
+{
+    unsigned int randint;
+	srand_sse((unsigned) time(NULL));
+	rand_sse(&randint, 16);
+	return from + ( (int) randint % ( to - from + 1 ) );
+}
+
 
 
 static int setup_socket(struct ring *ring, char *netdev)
@@ -113,18 +121,17 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 
 	srand_sse((unsigned) time(NULL));
 	
-	unsigned int len;
+	int len;
 	unsigned int randint;
 	uint16_t      binlen;
-	rand_sse(&randint, 16);
-	len = MAX(MIN((unsigned)(1300 - ppd->tp_len), randint), (unsigned) 16);
+	len = rand_range(16, (int) 1500 - ppd->tp_len);
 
-	for (unsigned int i=0; i < len; i += 2) {
+	for (int i=0; i < len; i += 2) {
 		srand_sse((unsigned) time(NULL) + i);
 		rand_sse(&randint, 16);
 		binlen = endian_swap16((uint16_t) randint);
 		printf("Rand: %d\n", binlen);
-		memcpy(&ctx->buf.data[ ppd->tp_len + i ], binlen, 2);
+		memcpy(&ctx->buf.data[ (int) ppd->tp_len + i ], binlen, 2);
 	}
 	binlen = endian_swap16((uint16_t) ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
