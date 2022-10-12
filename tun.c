@@ -124,14 +124,15 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	int len;
 	unsigned int randint;
 	uint16_t      binlen;
-	len = rand_range(16, (int) 1500 - ppd->tp_len);
+	int padding_len = ppd->tp_len < 500 ? 500 - ppd->tp_len : 1500 - ppd->tp_len;
+	len = rand_range(16, padding_len);
 
 	for (int i=0; i < len; i += 2) {
 		srand_sse((unsigned) time(NULL) + i);
 		rand_sse(&randint, 16);
 		binlen = endian_swap16((uint16_t) randint);
 		printf("Rand: %d\n", binlen);
-		//memcpy(&ctx->buf.data[ (int) ppd->tp_len + i ], binlen, 2);
+		memcpy(ctx->buf.data + ppd->tp_len + i, binlen, 2);
 	}
 	binlen = endian_swap16((uint16_t) ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
