@@ -209,7 +209,7 @@ static void echo_zerocopy(struct Context *ctx, struct tpacket3_hdr *ppd)
 		perror("vmsplice error");
 		return;
 	}
-
+	// Unfortunately, splice to tun isn't support
 	if (splice(ctx->pipefd[0], NULL, ctx->tunfd, NULL, 1500, SPLICE_F_MOVE) < 0)
 	{
 		perror("splice error");
@@ -227,7 +227,7 @@ static void walk_block(struct Context *ctx, struct block_desc *pbd)
 	for (i = 0; i < num_pkts; ++i)
 	{
 
-		echo_zerocopy(ctx, ppd);
+		echo_naive(ctx, ppd);
 		ppd = (struct tpacket3_hdr *)((uint8_t *)ppd +
 									  ppd->tp_next_offset);
 	}
