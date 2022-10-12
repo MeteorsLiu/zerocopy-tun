@@ -45,7 +45,7 @@ static void signal_handler(int sig)
 int rand_range(int from, int to)
 {
 	unsigned int randint;
-	srand_sse((unsigned)time(NULL));
+	srand_sse((unsigned)time(NULL)+from+to);
 	rand_sse(&randint, 16);
 	return from + ((int)randint % (to - from + 1));
 }
