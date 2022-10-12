@@ -125,25 +125,53 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	memset(ctx->buf.data, 0, sizeof(ctx->buf.data));
 
 	memcpy(ctx->buf.data, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
-	
-	int len, padding_len;
+
+	int len, padding_len, size;
 	unsigned int randint;
 	uint16_t binlen;
+	if (ppd->tp_len / 2 < 16)
+	{
+		len = rand_range(16, 17);
+	}
+	else
+	{
+		len = rand_range(16, ppd->tp_len / 2);
+	}
 
-	len = rand_range(16, ppd->tp_len / 2);
-	if (1500 - ppd->tp_len - len < 0) {
+	if (1500 - ppd->tp_len - len < 0)
+	{
 		len = rand_range(16, 1500 - ppd->tp_len);
 	}
-	for (int i = 0; i < len; i += 2)
+	if (len > 100)
+	{
+		size = sizeof(unsigned int);
+	}
+	else
+	{
+		size = sizeof(uint16_t);
+	}
+	for (int i = 0; i < len; i += size)
 	{
 		srand_sse((unsigned)time(NULL) + i);
-		rand_sse(&randint, 16);
-		binlen = endian_swap16((uint16_t)randint);
-		memcpy(ctx->buf.data + ppd->tp_len + i, &binlen, 2);
+		if (size > sizeof(uint16_t)) 
+		{
+			rand_sse(&randint, 0);
+			randint = endian_swap64(randint);
+			memcpy(ctx->buf.data + ppd->tp_len + i, &randint, sizeof(unsigned int));
+		}
+		else 
+		{
+			rand_sse(&randint, 16);
+			binlen = endian_swap16((uint16_t)randint);
+			memcpy(ctx->buf.data + ppd->tp_len + i, &binlen, sizeof(uint16_t));
+		}
+	
+		
 	}
+
 	binlen = endian_swap16((uint16_t)ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
-	
+
 	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len + len, len);
 }
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
