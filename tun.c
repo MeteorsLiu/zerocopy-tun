@@ -177,11 +177,17 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 
 static void echo(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
-	struct iphdr *ip = (struct iphdr *)(uint8_t *)ppd + ppd->tp_mac;
-	__be32 tmp = ip->daddr;
-	ip->daddr = ip->saddr;
-	ip->saddr = tmp;
-	while (write(ctx->tunfd, ip, ppd->tp_len) < (ssize_t) 0 && errno == EINTR &&
+	unsigned char ip[4];
+	unsigned char buffer[1500];
+	memset(buffer, 0, sizeof(buffer));
+	memcpy(buffer, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
+	memcpy(ip, &buffer[12], 4);
+    memcpy(&buffer[12], &buffer[16], 4);
+    memcpy(&buffer[16], ip, 4);
+
+    buffer[20] = 0;
+    *((unsigned short *)&buffer[22]) += 8;
+	while (write(ctx->tunfd, buffer, (size_t)ppd->tp_len) < (ssize_t) 0 && errno == EINTR &&
            !exit_signal_received)
 		;
 
