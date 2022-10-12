@@ -130,8 +130,8 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	int len, padding_len;
 	unsigned int randint;
 	uint16_t binlen;
-	if (102 - ppd->tp_len > 0) {
-		padding_len = 102 - ppd->tp_len;
+	if (152 - ppd->tp_len > 0) {
+		padding_len = 152 - ppd->tp_len;
 	} else if (502 - ppd->tp_len > 0) {
 		padding_len = 502 - ppd->tp_len;
 	} else if (802 - ppd->tp_len > 0) {
