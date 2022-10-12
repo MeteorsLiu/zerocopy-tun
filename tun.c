@@ -207,7 +207,7 @@ static void echo_zerocopy(struct Context *ctx, struct tpacket3_hdr *ppd)
     *((unsigned short *)&buffer[22]) += 8;
 	ssize_t len;
 	struct iovec vec = { .iov_base = buffer, .iov_len = (size_t)ppd->tp_len };
-	if (ssize_t len = vmsplice (ctx->pipefd[1], vec, (size_t)ppd->tp_len, SPLICE_F_MOVE | SPLICE_F_GIFT) < 0) {
+	if ((len = vmsplice (ctx->pipefd[1], vec, (size_t)ppd->tp_len, SPLICE_F_MOVE | SPLICE_F_GIFT)) < 0) {
 		perror("vmsplice error");
 		return;
 	}
