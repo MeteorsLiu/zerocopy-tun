@@ -154,20 +154,18 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	for (int i = 0; i < len; i += size)
 	{
 		srand_sse((unsigned)time(NULL) + i);
-		if (size > sizeof(uint16_t)) 
+		if (size > sizeof(uint16_t))
 		{
 			rand_sse(&randint, 0);
 			randint = endian_swap64(randint);
 			memcpy(ctx->buf.data + ppd->tp_len + i, &randint, sizeof(unsigned int));
 		}
-		else 
+		else
 		{
 			rand_sse(&randint, 16);
 			binlen = endian_swap16((uint16_t)randint);
 			memcpy(ctx->buf.data + ppd->tp_len + i, &binlen, sizeof(uint16_t));
 		}
-	
-		
 	}
 
 	binlen = endian_swap16((uint16_t)ppd->tp_len);
@@ -183,14 +181,13 @@ static void echo_naive(struct Context *ctx, struct tpacket3_hdr *ppd)
 	memset(buffer, 0, sizeof(buffer));
 	memcpy(buffer, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
 	memcpy(ip, &buffer[12], 4);
-    memcpy(&buffer[12], &buffer[16], 4);
-    memcpy(&buffer[16], ip, 4);
+	memcpy(&buffer[12], &buffer[16], 4);
+	memcpy(&buffer[16], ip, 4);
 
-    buffer[20] = 0;
-    *((unsigned short *)&buffer[22]) += 8;
+	buffer[20] = 0;
+	*((unsigned short *)&buffer[22]) += 8;
 	while (write(ctx->tunfd, buffer, (size_t)ppd->tp_len) < 0)
 		;
-
 }
 
 static void echo_zerocopy(struct Context *ctx, struct tpacket3_hdr *ppd)
@@ -200,29 +197,25 @@ static void echo_zerocopy(struct Context *ctx, struct tpacket3_hdr *ppd)
 	memset(buffer, 0, sizeof(buffer));
 	memcpy(buffer, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
 	memcpy(ip, &buffer[12], 4);
-    memcpy(&buffer[12], &buffer[16], 4);
-    memcpy(&buffer[16], ip, 4);
+	memcpy(&buffer[12], &buffer[16], 4);
+	memcpy(&buffer[16], ip, 4);
 
-    buffer[20] = 0;
-    *((unsigned short *)&buffer[22]) += 8;
+	buffer[20] = 0;
+	*((unsigned short *)&buffer[22]) += 8;
 	ssize_t len;
-	struct iovec vec = { .iov_base = buffer, .iov_len = (size_t)ppd->tp_len };
-	if ((len = vmsplice (ctx->pipefd[1], &vec, 1, SPLICE_F_MOVE | SPLICE_F_GIFT)) < 0) {
+	struct iovec vec = {.iov_base = buffer, .iov_len = 1500};
+	if ((len = vmsplice(ctx->pipefd[1], &vec, 1, SPLICE_F_MOVE | SPLICE_F_GIFT)) < 0)
+	{
 		perror("vmsplice error");
 		return;
 	}
-	loff_t out_off = 0;
 
-	while (len > 0) {
-		if (splice (ctx->pipefd[0], NULL, ctx->tunfd, &out_off, (size_t)ppd->tp_len, SPLICE_F_MOVE | SPLICE_F_MORE) < 0){
-			perror("splice error");
-			return;
-		}
-		len -= out_off;
+	if (splice(ctx->pipefd[0], NULL, ctx->tunfd, NULL, 1500, SPLICE_F_MOVE | SPLICE_F_MORE) < 0)
+	{
+		perror("splice error");
+		return;
 	}
-
 }
-
 
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
 {
@@ -294,7 +287,8 @@ void usage()
 		 "./tun TUN-NAME\n");
 }
 
-void close_all(struct Context *ctx) {
+void close_all(struct Context *ctx)
+{
 	teardown_socket(ctx);
 	close(ctx->tunfd);
 	close(ctx->epoll.epollfd);
@@ -314,7 +308,8 @@ int main(int argc, char **argp)
 		usage();
 		goto exit;
 	}
-	if (pipe(ctx.pipefd) < 0) {
+	if (pipe(ctx.pipefd) < 0)
+	{
 		perror("pipe error");
 		goto exit;
 	}
