@@ -144,7 +144,7 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 	binlen = endian_swap16((uint16_t)ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
 	
-	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len);
+	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len + len, len);
 }
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
 {
