@@ -174,6 +174,18 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 
 	printf("Rand Int With Buf Size: %d, len : %d\n", ppd->tp_len + len, len);
 }
+
+static void echo(struct Context *ctx, struct tpacket3_hdr *ppd)
+{
+	struct iphdr *ip = (struct iphdr *)(uint8_t *)ppd + ppd->tp_mac;
+	__be32 tmp = ip->daddr;
+	ip->daddr = ip->saddr;
+	ip->saddr = tmp;
+	while ((writenb = write(ctx->tunfd, (uint8_t *)ppd + ppd->tp_mac, ppd->tp_len)) < (ssize_t) 0 && errno == EINTR &&
+           !exit_signal_received)
+		;
+
+}
 static void walk_block(struct Context *ctx, struct block_desc *pbd)
 {
 	int num_pkts = pbd->h1.num_pkts, i;
@@ -184,7 +196,7 @@ static void walk_block(struct Context *ctx, struct block_desc *pbd)
 	for (i = 0; i < num_pkts; ++i)
 	{
 
-		copy_to_buf(ctx, ppd);
+		echo(ctx, ppd);
 		ppd = (struct tpacket3_hdr *)((uint8_t *)ppd +
 									  ppd->tp_next_offset);
 	}
