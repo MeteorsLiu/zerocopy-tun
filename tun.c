@@ -141,7 +141,7 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 		binlen = endian_swap16((uint16_t)randint);
 		printf("Rand: %d\n", binlen);
 		ctx->buf.data += i;
-		memcpy(ctx->buf.data, binlen, 2);
+		memcpy(ctx->buf.data, &binlen, 2);
 	}
 	binlen = endian_swap16((uint16_t)ppd->tp_len);
 	memcpy(ctx->buf.len, &binlen, 2);
