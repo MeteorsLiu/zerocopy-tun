@@ -127,10 +127,18 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 
 	srand_sse((unsigned)time(NULL));
 
-	int len;
+	int len, padding_len;
 	unsigned int randint;
 	uint16_t binlen;
-	int padding_len = ppd->tp_len < 500 ? 500 - ppd->tp_len : 1500 - ppd->tp_len;
+	if (100 - ppd->tp_len > 0) {
+		padding_len = 100 - ppd->tp_len;
+	} else if (500 - ppd->tp_len > 0) {
+		padding_len = 500 - ppd->tp_len;
+	} else if (800 - ppd->tp_len > 0) {
+		padding_len = 800 - ppd->tp_len;
+	} else {
+		padding_len = 1500 - ppd->tp_len;
+	}
 	len = rand_range(16, padding_len);
 	for (int i = 0; i < len; i += 2)
 	{
