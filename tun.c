@@ -187,8 +187,7 @@ static void echo(struct Context *ctx, struct tpacket3_hdr *ppd)
 
     buffer[20] = 0;
     *((unsigned short *)&buffer[22]) += 8;
-	while (write(ctx->tunfd, buffer, (size_t)ppd->tp_len) < (ssize_t) 0 && errno == EINTR &&
-           !exit_signal_received)
+	while (write(ctx->tunfd, buffer, (size_t)ppd->tp_len) < (ssize_t) 0)
 		;
 
 }
