@@ -123,19 +123,20 @@ static int setup_socket(struct ring *ring, char *netdev)
 static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 {
 	memset(ctx->buf.data, 0, sizeof(ctx->buf.data));
+	
 	memcpy(ctx->buf.data, (uint8_t *)ppd + ppd->tp_mac, (size_t)ppd->tp_len);
-
-	srand_sse((unsigned)time(NULL));
 
 	int len, padding_len;
 	unsigned int randint;
 	uint16_t binlen;
-	if (152 - ppd->tp_len > 0) {
-		padding_len = 152 - ppd->tp_len;
-	} else if (502 - ppd->tp_len > 0) {
-		padding_len = 502 - ppd->tp_len;
-	} else if (802 - ppd->tp_len > 0) {
-		padding_len = 802 - ppd->tp_len;
+	if (132 - ppd->tp_len > 0) {
+		padding_len = 132 - ppd->tp_len;
+	} else if (300 - ppd->tp_len > 0) { 
+		padding_len = 300 - ppd->tp_len;
+	} else if (500 - ppd->tp_len > 0) {
+		padding_len = 500 - ppd->tp_len;
+	} else if (800 - ppd->tp_len > 0) {
+		padding_len = 800 - ppd->tp_len;
 	} else {
 		padding_len = 1500 - ppd->tp_len;
 	}
@@ -145,7 +146,6 @@ static void copy_to_buf(struct Context *ctx, struct tpacket3_hdr *ppd)
 		srand_sse((unsigned)time(NULL) + i);
 		rand_sse(&randint, 16);
 		binlen = endian_swap16((uint16_t)randint);
-		printf("Rand: %d\n", binlen);
 		memcpy(ctx->buf.data + ppd->tp_len + i, &binlen, 2);
 	}
 	binlen = endian_swap16((uint16_t)ppd->tp_len);
