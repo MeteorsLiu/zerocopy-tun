@@ -109,7 +109,7 @@ int main(int argc, char **argp)
 
 		if (ctx.epoll.events[0].data.fd == ctx.tunfd)
 		{
-			if (splice(ctx.tunfd, NULL, ctx.pipefd[1], NULL, 1500, SPLICE_F_MOVE) < 0) {
+			if (splice(ctx.tunfd, NULL, ctx.pipefd[1], NULL, 1500, 0) < 0) {
                 perror("splice");
             }
 		}
