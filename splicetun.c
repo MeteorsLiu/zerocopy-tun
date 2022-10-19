@@ -78,7 +78,6 @@ int main(int argc, char **argp)
 	char if_name[IFNAMSIZ];
 	if (argc < 1)
 	{
-		usage();
 		goto exit;
 	}
 	if (pipe(ctx.pipefd) < 0)
