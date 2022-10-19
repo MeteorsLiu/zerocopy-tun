@@ -16,7 +16,6 @@ typedef struct __attribute__((aligned(16))) Buf_
 struct Context
 {
 	struct epoll_context epoll;
-	struct ring ring;
 	Buf buf;
 	int tunfd;
 	int pipefd[2];
