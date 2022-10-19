@@ -82,7 +82,7 @@ int main(int argc, char **argp)
 		usage();
 		goto exit;
 	}
-	if (pipe2(ctx.pipefd) < 0)
+	if (pipe(ctx.pipefd) < 0)
 	{
 		perror("pipe error");
 		goto exit;
